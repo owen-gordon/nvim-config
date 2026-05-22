@@ -1,0 +1,12 @@
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Neovim local state
+shada/
+sessions/
+spell/
+
+# Plugin local data (don't commit, but keep lazy-lock.json for reproducibility)
+plugin/packer_compiled.lua
