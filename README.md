@@ -33,9 +33,31 @@ brew install neovim git ripgrep fd node
 
 **Ubuntu/Debian:**
 
+The version of Neovim in the default apt repos is usually too old (< 0.10). Use one of these:
+
 ```sh
+# Tooling (always needed)
 sudo apt install -y git build-essential ripgrep fd-find nodejs npm
-# Neovim: use the stable PPA or download the AppImage from neovim.io
+
+# Option A: official PPA (stable releases)
+sudo add-apt-repository ppa:neovim-ppa/stable
+sudo apt update && sudo apt install -y neovim
+
+# Option B: AppImage (no root, latest stable)
+curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
+chmod +x nvim-linux-x86_64.appimage
+sudo mv nvim-linux-x86_64.appimage /usr/local/bin/nvim
+
+# Option C: prebuilt tarball
+curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
+sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim
+```
+
+Note: on Debian/Ubuntu, `fd` is installed as `fdfind`. Symlink it so telescope can find it:
+
+```sh
+mkdir -p ~/.local/bin && ln -sf "$(which fdfind)" ~/.local/bin/fd
 ```
 
 **Arch:**
