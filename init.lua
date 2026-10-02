@@ -50,6 +50,9 @@ vim.opt.termguicolors = true
 vim.opt.showmode = false
 vim.opt.wrap = true
 
+-- Treat .h files as C, not C++ (Neovim's default)
+vim.g.c_syntax_for_h = true
+
 -- Keymaps
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", "<Cmd>w<CR>", { desc = "Save" })
 vim.keymap.set("n", "<C-z>", "u", { desc = "Undo" })
