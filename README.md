@@ -18,7 +18,7 @@ My personal Neovim configuration, built on [lazy.nvim](https://github.com/folke/
 
 - **Neovim** ≥ 0.12 (required by nvim-treesitter's `main` branch)
 - **git**
-- **make**, a C compiler (`gcc`/`clang`) — for treesitter parsers and `avante.nvim`'s build step
+- **A C compiler** (`gcc`/`clang`) and **curl** — to build treesitter parsers and download `avante.nvim`'s prebuilt libraries
 - **[tree-sitter CLI](https://github.com/tree-sitter/tree-sitter/releases)** ≥ 0.26.1 — nvim-treesitter uses it to build parsers (install a release binary, **not** the npm package)
 - **ripgrep** (`rg`) and **fd** — for telescope live-grep and file finding
 - **A [Nerd Font](https://www.nerdfonts.com/)** — for icons (set your terminal font to one)
