@@ -6,7 +6,7 @@ My personal Neovim configuration, built on [lazy.nvim](https://github.com/folke/
 
 - **Plugin manager:** lazy.nvim (auto-bootstraps on first launch)
 - **Colorscheme:** catppuccin
-- **LSP:** mason + mason-lspconfig + nvim-lspconfig
+- **LSP:** mason + mason-lspconfig + nvim-lspconfig (clangd for C/C++, pyright for Python), with inlay hints
 - **Completion:** nvim-cmp + LuaSnip
 - **Fuzzy finder:** telescope.nvim
 - **File explorer:** neo-tree.nvim
@@ -16,28 +16,34 @@ My personal Neovim configuration, built on [lazy.nvim](https://github.com/folke/
 
 ## Requirements
 
-- **Neovim** ≥ 0.10 (0.11+ recommended)
+- **Neovim** ≥ 0.12 (required by nvim-treesitter's `main` branch)
 - **git**
 - **make**, a C compiler (`gcc`/`clang`) — for treesitter parsers and `avante.nvim`'s build step
+- **[tree-sitter CLI](https://github.com/tree-sitter/tree-sitter/releases)** ≥ 0.26.1 — nvim-treesitter uses it to build parsers (install a release binary, **not** the npm package)
 - **ripgrep** (`rg`) and **fd** — for telescope live-grep and file finding
 - **A [Nerd Font](https://www.nerdfonts.com/)** — for icons (set your terminal font to one)
-- **Node.js** — required by some LSP servers installed via mason
+- **Node.js** — required by some LSP servers installed via mason (e.g. pyright; it's skipped automatically if Node is missing)
 
 ### Install dependencies
 
 **macOS (Homebrew):**
 
 ```sh
-brew install neovim git ripgrep fd node
+brew install neovim git ripgrep fd node tree-sitter-cli
 ```
 
 **Ubuntu/Debian:**
 
-The version of Neovim in the default apt repos is usually too old (< 0.10). Use one of these:
+The version of Neovim in the default apt repos is usually too old (< 0.12). Use one of these:
 
 ```sh
 # Tooling (always needed)
 sudo apt install -y git build-essential ripgrep fd-find nodejs npm
+
+# tree-sitter CLI (the apt package is too old)
+mkdir -p ~/.local/bin
+curl -L https://github.com/tree-sitter/tree-sitter/releases/latest/download/tree-sitter-linux-x64.gz \
+  | gunzip > ~/.local/bin/tree-sitter && chmod +x ~/.local/bin/tree-sitter
 
 # Option A: official PPA (stable releases)
 sudo add-apt-repository ppa:neovim-ppa/stable
@@ -63,7 +69,7 @@ mkdir -p ~/.local/bin && ln -sf "$(which fdfind)" ~/.local/bin/fd
 **Arch:**
 
 ```sh
-sudo pacman -S neovim git ripgrep fd nodejs base-devel
+sudo pacman -S neovim git ripgrep fd nodejs base-devel tree-sitter-cli
 ```
 
 ## Install
@@ -89,7 +95,7 @@ Launch:
 nvim
 ```
 
-lazy.nvim will bootstrap itself and install all plugins on first run. Then run `:Mason` to install LSP servers as needed.
+lazy.nvim will bootstrap itself and install all plugins on first run, then clangd, pyright and the treesitter parsers install in the background. Run `:Mason` to install other LSP servers as needed.
 
 ## Layout
 
@@ -103,7 +109,7 @@ lazy.nvim will bootstrap itself and install all plugins on first run. Then run `
     ├── dashboard.lua     -- alpha-nvim
     ├── editor.lua        -- colorscheme, statusline, etc.
     ├── explorer.lua      -- neo-tree
-    ├── lsp.lua           -- mason, lspconfig
+    ├── lsp.lua           -- mason, lspconfig, clangd, pyright
     ├── telescope.lua     -- telescope
     └── treesitter.lua    -- nvim-treesitter
 ```
@@ -147,7 +153,7 @@ Inside neo-tree: `a` add file, `d` delete, `r` rename, `c` copy, `x` cut, `p` pa
 
 ### LSP
 
-LSP keymaps activate automatically when a language server attaches to the buffer. Install servers with `:Mason` (Pyright is pre-installed via `mason-lspconfig`).
+LSP keymaps activate automatically when a language server attaches to the buffer. Install servers with `:Mason` (clangd and Pyright are pre-installed via `mason-lspconfig`). Diagnostics show inline at the end of the line, and inlay hints (parameter names, deduced types) are on by default.
 
 | Key            | Action                            |
 | -------------- | --------------------------------- |
@@ -161,6 +167,8 @@ LSP keymaps activate automatically when a language server attaches to the buffer
 | `<leader>d`    | Show diagnostic at cursor         |
 | `[d` / `]d`    | Previous / next diagnostic        |
 | `<C-k>` (insert mode) | Signature help             |
+| `<leader>ih`   | Toggle inlay hints                |
+| `<A-o>`        | Switch source/header (clangd)     |
 
 ### Completion (nvim-cmp, insert mode)
 
@@ -177,6 +185,46 @@ LSP keymaps activate automatically when a language server attaches to the buffer
 - Run `:Mason` to install / manage LSP servers, formatters, linters.
 - Run `:checkhealth` to diagnose missing dependencies (rg, fd, node, compiler, etc.).
 - Run `:Lazy` for the plugin manager UI (`U` to update, `S` to sync).
+
+## C / C++ projects
+
+clangd needs to know each file's compiler flags. Without them it guesses and
+reports false errors. Give it one of these in the project:
+
+- **`compile_commands.json`** (best): generate it with `bear -- make`
+  (`sudo apt install bear`) or `cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`.
+- **`compile_flags.txt`** (simplest): one flag per line, applied to every file
+  in that directory and below, e.g.
+
+  ```
+  -std=gnu11
+  -Wall
+  -Wextra
+  -I.
+  ```
+
+clangd runs clang-tidy too. Choose checks in `.clang-tidy` (per project) or
+`~/.config/clangd/config.yaml` (all projects):
+
+```yaml
+Diagnostics:
+  ClangTidy:
+    Add: [bugprone-*, clang-analyzer-*]
+```
+
+## Remote editing over SSH
+
+Install Neovim and this config **on the remote machine** and run it inside your
+SSH session. The language server then runs where the code, headers, and
+compiler live, which is how VS Code Remote-SSH does it too.
+
+```sh
+ssh -t user@host 'cd ~/project && exec $SHELL -lc nvim'
+```
+
+The clipboard still works: over SSH, yanks go to your local clipboard through
+the terminal (OSC 52). Inside tmux, add `set -g set-clipboard on` to your
+tmux config.
 
 ## License
 

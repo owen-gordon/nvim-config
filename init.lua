@@ -1,6 +1,6 @@
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not vim.loop.fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
   vim.fn.system({
     "git", "clone", "--filter=blob:none",
     "https://github.com/folke/lazy.nvim.git",
@@ -18,6 +18,20 @@ vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.mouse = "a"
 vim.opt.clipboard = "unnamedplus"
+-- Over SSH there's usually no system clipboard tool, so copy through the
+-- terminal with OSC 52. Paste reads Neovim's own register instead, because many
+-- terminals ignore OSC 52 paste requests and `p` would hang waiting for one.
+if vim.env.SSH_TTY then
+  local osc52 = require("vim.ui.clipboard.osc52")
+  local function paste()
+    return { vim.fn.split(vim.fn.getreg(""), "\n"), vim.fn.getregtype("") }
+  end
+  vim.g.clipboard = {
+    name = "OSC 52",
+    copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+    paste = { ["+"] = paste, ["*"] = paste },
+  }
+end
 vim.opt.breakindent = true
 vim.opt.undofile = true
 vim.opt.ignorecase = true
@@ -57,4 +71,6 @@ vim.keymap.set("n", "<leader>x", "<Cmd>bdelete<CR>")
 vim.keymap.set("n", "<Esc>", "<Cmd>nohlsearch<CR>")
 
 -- Load plugins
-require("lazy").setup("plugins")
+require("lazy").setup("plugins", {
+  rocks = { enabled = false }, -- no plugin here needs luarocks
+})
